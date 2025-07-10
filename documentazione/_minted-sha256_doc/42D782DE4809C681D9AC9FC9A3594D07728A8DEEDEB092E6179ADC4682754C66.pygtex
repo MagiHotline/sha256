@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{argc}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{fprintf}\PYG{p}{(}\PYG{n}{stderr}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}Usage: \PYGZpc{}s \PYGZlt{}shm\PYGZus{}key\PYGZgt{} \PYGZlt{}data\PYGZus{}size\PYGZgt{}}
+\PYG{+w}{     }\PYG{o}{\PYGZlt{}}\PYG{n}{client\PYGZus{}pid}\PYG{o}{\PYGZgt{}}\PYG{err}{\PYGZbs{}}\PYG{n}{n}\PYG{l+s}{\PYGZdq{}, argv[0]);}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

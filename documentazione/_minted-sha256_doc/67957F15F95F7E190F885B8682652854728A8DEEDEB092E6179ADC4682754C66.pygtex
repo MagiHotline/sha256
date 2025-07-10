@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}define REQ\PYGZus{}MSG\PYGZus{}KEY 0x5678  }\PYG{c+c1}{// Per richieste client\PYGZhy{}\PYGZgt{}server}
+\PYG{c+cp}{\PYGZsh{}define RESP\PYGZus{}MSG\PYGZus{}KEY 0x5679 }\PYG{c+c1}{// Per risposte server\PYGZhy{}\PYGZgt{}client}
+\end{Verbatim}

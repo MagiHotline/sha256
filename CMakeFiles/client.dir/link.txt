@@ -1,0 +1,1 @@
+/opt/homebrew/Cellar/gcc/14.2.0_1/bin/gcc-14  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/client.dir/src/client.c.o -o client

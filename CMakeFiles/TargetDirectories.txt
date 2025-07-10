@@ -1,0 +1,5 @@
+/Users/paoloimbriani/Desktop/UniNotes/Second Year/Sistemi_Operativi/sha256_imbriani/CMakeFiles/server.dir
+/Users/paoloimbriani/Desktop/UniNotes/Second Year/Sistemi_Operativi/sha256_imbriani/CMakeFiles/client.dir
+/Users/paoloimbriani/Desktop/UniNotes/Second Year/Sistemi_Operativi/sha256_imbriani/CMakeFiles/worker.dir
+/Users/paoloimbriani/Desktop/UniNotes/Second Year/Sistemi_Operativi/sha256_imbriani/CMakeFiles/edit_cache.dir
+/Users/paoloimbriani/Desktop/UniNotes/Second Year/Sistemi_Operativi/sha256_imbriani/CMakeFiles/rebuild_cache.dir

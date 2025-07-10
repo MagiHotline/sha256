@@ -1,0 +1,17 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Coda delle richieste: manda le richieste al server}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{req\PYGZus{}msqid}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{msgget}\PYG{p}{(}\PYG{n}{REQ\PYGZus{}MSG\PYGZus{}KEY}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mo}{0666}\PYG{p}{);}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{req\PYGZus{}msqid}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{perror}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}msgget request queue\PYGZdq{}}\PYG{p}{);}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+c1}{// ...}
+
+\PYG{c+c1}{// Coda delle risposte: riceve le risposte dal server}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{resp\PYGZus{}msqid}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{msgget}\PYG{p}{(}\PYG{n}{RESP\PYGZus{}MSG\PYGZus{}KEY}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mo}{0666}\PYG{+w}{ }\PYG{o}{|}\PYG{+w}{ }\PYG{n}{IPC\PYGZus{}CREAT}\PYG{p}{);}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{resp\PYGZus{}msqid}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{l+m+mi}{\PYGZhy{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{perror}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}msgget response queue\PYGZdq{}}\PYG{p}{);}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

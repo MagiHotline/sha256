@@ -1,0 +1,21 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Messaggio che invia il client al server}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{msg\PYGZus{}request}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{n}{mtype}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{pid\PYGZus{}t}\PYG{+w}{ }\PYG{n}{pid}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{scheduling\PYGZus{}policy}\PYG{p}{;}
+\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Messaggio che il server invia al client}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{msg\PYGZus{}response}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{n}{mtype}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{hash}\PYG{p}{[}\PYG{l+m+mi}{65}\PYG{p}{];}
+\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Messaggio che permette di modificare il limite di file concorrenti}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{msg\PYGZus{}control}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{long}\PYG{+w}{ }\PYG{n}{mtype}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{new\PYGZus{}limit}\PYG{p}{;}
+\PYG{p}{\PYGZcb{};}
+\end{Verbatim}

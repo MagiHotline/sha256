@@ -1,0 +1,19 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {section}{\numberline {1}Struttura del progetto}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Specifiche}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Obiettivi}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Struttura}{3}{subsection.1.3}%
+\contentsline {subsubsection}{\numberline {1.3.1}Client}{4}{subsubsection.1.3.1}%
+\contentsline {subsubsection}{\numberline {1.3.2}Server}{4}{subsubsection.1.3.2}%
+\contentsline {subsubsection}{\numberline {1.3.3}Worker}{5}{subsubsection.1.3.3}%
+\contentsline {subsubsection}{\numberline {1.3.4}Libreria condivisa \texttt {common.h}}{5}{subsubsection.1.3.4}%
+\contentsline {section}{\numberline {2}Implementazione degli obiettivi}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Instanziare processi distinti per elaborare richieste multiple concorrenti}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Introdurre un limite al numero di processi in esecuzione, modificabile tramite un secondo client}{7}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Schedulare le richieste pendenti in base alla loro dimensione}{7}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Utilizzare almeno un semaforo per sincronizzare il flusso di comunicazione e/o processamento}{7}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Offrire multipli algoritmi di schedulazione delle richieste pendenti (p.e. FCFS), configurabile alla partenza del server}{7}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Difficoltà riscontrate}{7}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Gestione dei semafori e processi figli}{7}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Code dei messaggi dedicate}{8}{subsection.3.2}%

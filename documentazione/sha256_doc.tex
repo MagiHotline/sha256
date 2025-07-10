@@ -1,0 +1,362 @@
+\documentclass[a4paper]{article}
+\usepackage{graphicx}
+\graphicspath{{./figures/}}
+\usepackage[italian]{babel}
+\usepackage{float}
+\usepackage{braket}
+\usepackage{listings}
+\usepackage{minted}
+\usepackage{mdframed}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usetikzlibrary{shapes, arrows, automata, petri, decorations.markings, decorations.pathreplacing, positioning, calc}
+
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=false,
+}
+
+\newcommand{\mycomment}[1]{}
+
+% Code blocks
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+\lstdefinestyle{mystyle}{
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+
+% Title ------------------------------------------------------------------------------
+\title{Documentazione progetto Sistemi Operativi\\[1ex]
+  \large Servizio di calcolo dell'impronta SHA256 su file multipli
+}
+
+\author{
+  \vspace{0.8cm}
+  Università di Verona\\
+  Imbriani Paolo - VR500437
+}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\textwidth]{UniversityofVerona}
+\end{figure}
+
+\maketitle 
+
+\pagebreak
+% Title ------------------------------------------------------------------------------
+
+\tableofcontents
+
+\pagebreak
+
+\section{Struttura del progetto}
+
+\subsection{Specifiche}
+
+Il progetto consiste in un servizio che calcola l'impronta SHA256 di uno o più file.
+L'obiettivo è anzitutto realizzare un server che permette multiple computazioni di impronte
+SHA256 in parallelo, e un client che permette di inviare i file al server e ricevere le impronte calcolate.
+Per sviluppare questo progetto vi erano tre alternative:
+\begin{itemize}
+    \item IPC (Inter-Process Communication) con semafori, code e memoria condivisa;
+    \item PThread (Parallel Threads) e FIFO
+    \item IPC e Schedulazione con MentOS
+\end{itemize}
+Dopo aver valutato le alternative, si è scelto di sviluppare il progetto
+utilizzando IPC su Linux / MacOS. 
+
+\subsection{Obiettivi}
+
+Gli obiettivi del progetto sono:
+\begin{itemize}
+    \item Implementare un server che riceve richieste ed invia risposte, usando code di messaggi
+    \item Implementare un client che invie richieste e riceve risposte, usando code di messaggi
+    \item Trasferire file al server tramite memoria condivisa
+    \item Instanziare processi distinti per elaborare richieste multiple concorrenti
+    \item Introdurre un limite al numero di processi in esecuzione, modificabile 
+    tramite un secondo client
+    \item Schedulare le richieste pendenti in base alla loro dimensione
+    \item Utilizzare almeno un semaforo per sincronizzare il flusso di comunicazione e/o
+    processamento
+    \item Offrire multipli algoritmi di schedulazione delle richieste pendenti (p.e. FCFS),
+    configurabile alla partenza del server
+\end{itemize}
+
+\subsection{Struttura}
+
+Il progetto è composto da due parti principali: il server (\texttt{server.c}) e il client (\texttt{client.c}).
+È stata usata una libreria chiamata \texttt{common.h} per condividere le strutture dati
+e costanti tra il server e il client. Inoltre vi è anche un file chiamato \texttt{worker.c}
+che contiene la logica per calcolare l'impronta SHA256 dei file ricevuti ed è l'eseguibile che verrà chiamato
+dal server per elaborare le richieste.
+
+\subsubsection{Client} 
+
+L'eseguibile del client richiede come argomento il nome del file da inviare al server e l'algoritmo 
+di schedulazione che si vuole utilizzare. Queste sono le prime righe all'interno del file \texttt{client.c}:
+\begin{minted}{c}
+// Prendi algoritmo e file come argomento del client
+if (argc < 3) {
+    printf("Uso: %s <algorithm> <file>\n", argv[0]);
+    printf("Algorithms: 0=FCFS, 1=Priority\n");
+    return 1;
+}
+\end{minted}
+\noindent
+Il workflow del client è il seguente:
+\begin{itemize}
+    \item Ottenere il nome del file e la scheduling policy da utilizzare
+    \item Leggere il file e calcolare la sua dimensione
+    \item Creare la memoria condivisa per il file tramite la chiave
+    \texttt{SHM\_KEY} definita in \texttt{common.h}
+    \item Ottenere la coda dei messaggi per le richieste con \texttt{msgget(REQ\_MSG\_KEY)}
+    anch'essa definita in \texttt{common.h}
+    \item I dati del file vengono copiati nella memoria condivisa
+    \item Si prepara il messaggio da inviare al server, che contiene:
+    \begin{itemize}
+        \item Il PID del client
+        \item Il nome del file
+        \item La dimensione del file
+        \item L'algoritmo di scheduling da utilizzare
+    \end{itemize}
+    \item La richiesta viene inviata al server tramite \texttt{msgsnd()}
+    \item Il client attende la risposta dal server tramite \texttt{msgrcv()}
+    \item Il client riceve la risposta dal server, che contiene:
+    \begin{itemize}
+        \item L'impronta SHA256 del file
+        \item Il tipo di risposta
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Server}
+
+Il server è l'eseguibile del progetto che gestisce le richieste dei client.
+Quest'ultimo si avvia e rimane in attesa di richieste dai client.
+Il workflow del server è il seguente:
+\begin{itemize}
+    \item Per essere process-safe Il server manda segnale SIGCHLD al processo padre quando un figlio termina e
+    raccoglie lo stato di terminazione del processo figlio
+    (questo per evitare processi zombie)
+    \item Il server ottiene la coda dei messaggi per le 
+    richieste e anche la memoria condivisa.
+    \item Entriamo in un loop, dove il server attende le richieste dai client tramite \texttt{msgrcv()}.
+    \item In base al tipo di richiesta ricevuta, il server può:
+    \begin{itemize}
+        \item Cambiare il numero massimo di processi in esecuzione
+        \item Schedulare la richiesta e avviare un processo figlio per calcolare l'impronta SHA256 del file
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Worker}
+
+Il worker è un processo figlio del server che si occupa di calcolare l'impronta SHA256 del file.
+Il workflow del worker è il seguente:
+\begin{itemize}
+    \item Il worker riceve la richiesta dal server tramite la coda dei messaggi delle richieste
+    \item Il worker legge il file dalla memoria condivisa
+    \item Calcola l'impronta SHA256 del file 
+    \item Prepara la risposta da inviare al client, che contiene:
+    \begin{itemize}
+        \item L'impronta SHA256 del file
+        \item Il tipo di risposta
+    \end{itemize}
+    \item Il worker invia la risposta al client tramite la coda dei messaggi delle risposte
+\end{itemize}
+\noindent
+Il worker è definito nel file \texttt{worker.c} e richiede:
+\begin{itemize}
+    \item Il PID del client che ha inviato la richiesta
+    \item La chiave della memoria condivisa per leggere il file
+    \item La dimensione del file
+\end{itemize}
+\begin{minted}{c}
+if (argc < 4) {
+    fprintf(stderr, "Usage: %s <shm_key> <data_size>
+     <client_pid>\n", argv[0]);
+    return 1;
+}
+\end{minted}
+
+\subsubsection{Libreria condivisa \texttt{common.h}}
+
+La libreria \texttt{common.h} contiene le definizioni delle strutture dati e delle costanti utilizzate come:
+\begin{minted}{c}
+#define REQ_MSG_KEY 0x5678  // Per richieste client->server
+#define RESP_MSG_KEY 0x5679 // Per risposte server->client
+#define SEM_KEY 0x1111 // chiave per il semaforo
+#define SHM_KEY 0x1234 // chiave per la memoria condivisa
+#define MAX_FILE_SIZE 4096 // massima dimensione del file da processare
+// numero massimo di file concorrenti che il server può gestire
+#define MAX_CONCURRENT 5 
+// Tipo di messaggio controllo per modificare il limite dei file concorrenti
+#define CTRL_MTYPE 99 
+// Tipo di messaggio richiesta per client a server
+#define REQ_MTYPE 1 
+// Tipo di messaggio risposta per server a client
+#define RESP_MTYPE 2 
+// Lunghezza massima del nome del file
+#define MAX_FILENAME_LEN 256 
+
+// Scheduling policies
+#define SCHED_FCFS 0
+#define SCHED_PRIORITY 1
+\end{minted}
+\noindent
+invece le strutture dati sono:
+\begin{minted}{c}
+// Messaggio che invia il client al server
+struct msg_request {
+    long mtype;
+    size_t size;
+    pid_t pid;
+    int scheduling_policy; 
+};
+
+// Messaggio che il server invia al client
+struct msg_response {
+    long mtype;
+    char hash[65];
+};
+
+// Messaggio che permette di modificare il limite di file concorrenti
+struct msg_control {
+    long mtype;
+    int new_limit;
+};
+\end{minted}
+
+
+\section{Implementazione degli obiettivi}
+
+\subsection{Instanziare processi distinti per elaborare richieste multiple concorrenti}
+
+Per gestire richieste multiple concorrenti, il server entra in un loop dove attende le richieste dai client.
+Quando riceve una richiesta, crea un processo figlio per elaborare la richiesta.
+Questo è stato fatto tramite la funzione \texttt{fork()} all'interno del server.
+Il processo figlio esegue il worker per calcolare l'impronta SHA256 del file.
+Il server gestisce i processi figli in modo da evitare processi zombie, utilizzando il segnale \texttt{SIGCHLD} per raccogliere lo stato di terminazione dei processi figli.
+Per eseguire il worker, il server chiama l'eseguibile \texttt{worker} passando come argomenti la chiave della memoria condivisa, la dimensione del file e il PID del client che ha inviato la richiesta.
+
+\subsection{Introdurre un limite al numero di processi in esecuzione, modificabile tramite un secondo client}
+
+Questo obiettivo è stato implementato tramite l'uso di un semaforo per sincronizzare
+l'accesso alla variabile che tiene traccia del numero di processi in esecuzione.
+In più è stato creato un nuovo tipo di Request per modificare il limite dei processi in esecuzione.
+Infatti, se un client vuole modificare questo dato può inviare una richiesta al server con il tipo di messaggio \texttt{CTRL\_MTYPE}.
+Il server riceve questa richiesta e modifica il limite dei processi in esecuzione.
+
+\subsection{Schedulare le richieste pendenti in base alla loro dimensione}
+
+È stato creato un semplice array di richieste pendenti, che viene ordinato in base alla dimensione del file.
+Questo viene gestito tramite le funzioni \texttt{enqueue()} e \texttt{dequeue()} successivamente
+evolute in enqueue e dequeue che vengono "cambiate" in base alla scheduling policy scelta.
+
+\subsection{Utilizzare almeno un semaforo per sincronizzare il flusso di comunicazione e/o processamento}
+
+È stato utilizzato un semaforo per sincronizzare l'accesso alla variabile che tiene traccia del numero di processi in esecuzione.
+Il semaforo deve garantire che solo un processo alla volta possa accedere a questa variabile, anche perché vitale
+per lo spawn degli worker.
+
+\subsection{Offrire multipli algoritmi di schedulazione delle richieste pendenti (p.e. FCFS), configurabile alla partenza del server}
+
+Sono stati implementati due algoritmi di schedulazione:
+\begin{itemize}
+    \item FCFS (First-Come, First-Served): le richieste vengono elaborate nell'ordine in cui arrivano.
+    \item Priority: le richieste vengono ordinate in base alla loro dimensione, le più piccole vengono elaborate per prime.
+\end{itemize}
+\noindent
+Questo è stato fattibile chiedendo al client di specificare l'algoritmo di schedulazione da utilizzare e poi
+quando si è all'interno del server, si controlla il tipo di richiesta e si applica l'algoritmo di schedulazione scelto.
+Questo va a cambiare le nostre funzioni \texttt{enqueue()} e \texttt{dequeue()} che ora in base alla scheduling policy
+scelta, ordinano le richieste in modo diverso.
+
+\section{Difficoltà riscontrate}
+
+\subsection{Gestione dei semafori e processi figli}
+
+È stata più volte consultata la documentazione per gli IPC con "msgrcv" e "msgsnd" per capire come
+gestire correttamente i processi e le code di messaggi.
+Non era molto chiaro inizialmente come gestire i processi figli e i semafori.
+Inizialmente si era pensato di utilizzare un semaforo per sincronizzare l'accesso alla coda di messaggi,
+ma si è scoperto che non era necessario, poiché le code di messaggi sono già sincronizzate.
+Il semaforo è stato usato per evitare che i processi figli accedessero a delle variabili sensibili come
+il numero di processi in esecuzione. Inoltre i semafori erano stati usati dove 
+non era necessario, causando confusione e problemi di sincronizzazione.
+In più non era stato settato il tipo di richiesta a \texttt{client\_pid}:
+\begin{minted}{c}
+// Usare il PID del client per indirizzare unicamente la risposta
+resp.mtype = client_pid;  
+\end{minted}
+\noindent
+Questo ha causato problemi nel ricevere le risposte dal server, poiché il client non riusciva
+a distinguere le risposte destinate a lui da quelle destinate ad altri client.
+
+
+\subsection{Code dei messaggi dedicate}
+
+Inizialmente si era pensato di utilizzare una singola coda di messaggi per il client e il server,
+a prescindere che il tipo di messaggio fosse una richiesta o una risposta.
+Tuttavia, si è riscontrato che questo approccio non funzionava correttamente, in quanto il client
+non riusciva a distinguere tra le richieste e le risposte, causando confusione nella gestione dei messaggi.
+Infatti, il server riusciva correttamente a inviare le risposte al client, ma il client aspettava
+un tempo indefinito per ricevere le risposte, poiché non riusciva a distinguere tra i messaggi di richiesta e quelli di risposta.
+Per risolvere questo problema, si è deciso di utilizzare due code di messaggi distinte: una per le richieste e una per le risposte.
+Questa parte di codice è definita in \texttt{common.h}:
+\begin{minted}{c}
+#define REQ_MSG_KEY 0x5678  // Per richieste client->server
+#define RESP_MSG_KEY 0x5679 // Per risposte server->client
+\end{minted}
+\noindent
+Di conseguenza il client ora invia le richieste alla coda di messaggi delle richieste e 
+attende le risposte dalla coda di messaggi delle risposte. Questo è come viene implementato in \texttt{client.c}:
+\begin{minted}{c}
+// Coda delle richieste: manda le richieste al server
+int req_msqid = msgget(REQ_MSG_KEY, 0666); 
+if (req_msqid == -1) {
+    perror("msgget request queue");
+    return 1;
+}
+
+// ...
+
+// Coda delle risposte: riceve le risposte dal server
+int resp_msqid = msgget(RESP_MSG_KEY, 0666 | IPC_CREAT); 
+if (resp_msqid == -1) {
+    perror("msgget response queue");
+    return 1;
+}
+\end{minted}
+\noindent
+Il server di conseguenza avrà come coda di messaggi solo quella delle richieste, e risponderà
+tramite il worker con i messaggi alla coda delle risposte del client.
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Usare il PID del client per indirizzare unicamente la risposta}
+\PYG{n}{resp}\PYG{p}{.}\PYG{n}{mtype}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{client\PYGZus{}pid}\PYG{p}{;}
+\end{Verbatim}
